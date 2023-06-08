@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id "io.freefair.lombok" version "5.3.0"
 }
 
 group 'org.example'
@@ -13,8 +14,6 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.1'
     testImplementation 'io.rest-assured:rest-assured:5.3.0'
     implementation 'org.junit.jupiter:junit-jupiter:5.9.2'
-
-
 }
 
 test {

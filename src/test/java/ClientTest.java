@@ -12,18 +12,17 @@ import static org.hamcrest.Matchers.*;
 
 public class ClientTest {
 
-    final static String URI = "http://localhost:8080/";
-    final static String CLIENT_URI = "cliente";
-    final static String DROP_ALL_CLIENTS = "/apagaTodos";
+    final static String CLIENT_URI = "/cliente";
+    final static String GET_CLIENT_BY_ID = "/cliente/{id}";
+    final static String DROP_ALL_CLIENTS = "/cliente/apagaTodos";
 
     @Test
     @DisplayName("Quando pegar todos os clientes sem cadastrar clientes, então a lista deve esta vazia")
     public void getAllClientsAndIsEmpty() {
 
         given()
-                .contentType(ContentType.JSON)
         .when()
-                .get(URI)
+                .get()
         .then()
                 .statusCode(HttpStatus.SC_OK)
                 .assertThat().body(new IsEqual<>(new HashMap().toString()));
@@ -33,13 +32,13 @@ public class ClientTest {
     @DisplayName("Quando cadastrar um cliente, então ele deve estar disponível no resultado")
     public void createClient() {
 
-        Client createClient = new Client(1005, "Minnie Mouse", 25, 0);
+        Client createClient = Client.builder().build();
 
         given()
                 .contentType(ContentType.JSON)
                 .body(createClient)
         .when()
-                .post(URI + CLIENT_URI)
+                .post(CLIENT_URI)
         .then()
                 .statusCode(HttpStatus.SC_CREATED)
                 .body("1005.nome", equalTo(createClient.getNome()))
@@ -50,47 +49,48 @@ public class ClientTest {
     @Test
     @DisplayName("Quando editar um cliente já cadastrado, então ele deve estar disponível com os novos dados")
     public void updateClient() {
-        Client createClient = new Client(1004, "Minnie Mouse", 25, 0);
+        Client createClient = Client.builder().build();
 
         given()
                 .contentType(ContentType.JSON)
                 .body(createClient)
         .when()
-                .post(URI + CLIENT_URI)
+                .post(CLIENT_URI)
         .then()
                 .statusCode(HttpStatus.SC_CREATED);
 
-        Client updateClient = new Client(1004, "Mickey Mouse", 30, 2);
+        Client updateClient = Client.builder().nome("Mickey Mouse").idade(30).risco(2).build();
 
         given()
                 .contentType(ContentType.JSON)
                 .body(updateClient)
         .when()
-                .put(URI + CLIENT_URI)
+                .put(CLIENT_URI)
         .then()
                 .statusCode(HttpStatus.SC_OK)
-                .body("1004.nome", equalTo(updateClient.getNome()))
-                .body("1004.idade", equalTo(updateClient.getIdade()))
-                .body("1004.risco", equalTo(updateClient.getRisco()));
+                .body("1005.nome", equalTo(updateClient.getNome()))
+                .body("1005.idade", equalTo(updateClient.getIdade()))
+                .body("1005.risco", equalTo(updateClient.getRisco()));
     }
 
     @Test
     @DisplayName("Quando deletar um cliente, então ele não deve esta disponível")
     public void deleteClient() {
-        Client createClient = new Client(1004, "Minnie Mouse", 25, 0);
+        Client createClient = Client.builder().build();
 
         given()
                 .contentType(ContentType.JSON)
                 .body(createClient)
         .when()
-                .post(URI + CLIENT_URI)
+                .post(CLIENT_URI)
         .then()
                 .statusCode(HttpStatus.SC_CREATED);
 
         given()
+                .pathParam("id", createClient.getId())
                 .contentType(ContentType.JSON)
         .when()
-                .delete(URI + CLIENT_URI + "/" + createClient.getId())
+                .delete(GET_CLIENT_BY_ID)
         .then()
                 .statusCode(200)
                 .assertThat().body(not(contains("Minnie Mouse")));
@@ -99,20 +99,21 @@ public class ClientTest {
     @Test
     @DisplayName("Quando pesquiso um cliente pelo ID, então o sistema deve retorna-lo")
     public void getAClient() {
-        Client createClient = new Client(1004, "Minnie Mouse", 25, 0);
+        Client createClient = Client.builder().build();
 
         given()
                 .contentType(ContentType.JSON)
                 .body(createClient)
         .when()
-                .post(URI + CLIENT_URI)
+                .post(CLIENT_URI)
         .then()
                 .statusCode(HttpStatus.SC_CREATED);
 
         given()
+                .pathParam("id", createClient.getId())
                 .contentType(ContentType.JSON)
         .when()
-                .get(URI + CLIENT_URI + "/" + createClient.getId())
+                .get(GET_CLIENT_BY_ID)
         .then()
                 .statusCode(200)
                 .body("id", equalTo(createClient.getId()))
@@ -126,7 +127,7 @@ public class ClientTest {
         given()
                 .contentType(ContentType.JSON)
         .when()
-                .delete(URI + CLIENT_URI + DROP_ALL_CLIENTS)
+                .delete(DROP_ALL_CLIENTS)
         .then()
                 .statusCode(200);
     }
