@@ -1,29 +1,29 @@
-import io.restassured.http.ContentType;
+import api.ClientApi;
+import domain.Client;
+import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import support.Config;
 
 import java.util.HashMap;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-public class ClientTest {
-
-    final static String CLIENT_URI = "/cliente";
+public class ClientTest extends Config {
     final static String GET_CLIENT_BY_ID = "/cliente/{id}";
-    final static String DROP_ALL_CLIENTS = "/cliente/apagaTodos";
+    private final ClientApi clientApi;
 
+    public ClientTest() {
+        clientApi = new ClientApi();
+    }
     @Test
     @DisplayName("Quando pegar todos os clientes sem cadastrar clientes, então a lista deve esta vazia")
     public void getAllClientsAndIsEmpty() {
+        Response expectedEmpty = clientApi.getAllClient();
 
-        given()
-        .when()
-                .get()
-        .then()
+        expectedEmpty.then()
                 .statusCode(HttpStatus.SC_OK)
                 .assertThat().body(new IsEqual<>(new HashMap().toString()));
     }
@@ -32,18 +32,14 @@ public class ClientTest {
     @DisplayName("Quando cadastrar um cliente, então ele deve estar disponível no resultado")
     public void createClient() {
 
-        Client createClient = Client.builder().build();
+        Client client = Client.builder().build();
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(createClient)
-        .when()
-                .post(CLIENT_URI)
-        .then()
-                .statusCode(HttpStatus.SC_CREATED)
-                .body("1005.nome", equalTo(createClient.getNome()))
-                .body("1005.idade", equalTo(createClient.getIdade()))
-                .body("1005.risco", equalTo(createClient.getRisco()));
+        Response expectedResponse = clientApi.createResponseClient(client);
+
+        expectedResponse.then().statusCode(HttpStatus.SC_CREATED)
+                .body("1005.nome", equalTo(client.getNome()))
+                .body("1005.idade", equalTo(client.getIdade()))
+                .body("1005.risco", equalTo(client.getRisco()));
     }
 
     @Test
@@ -51,21 +47,13 @@ public class ClientTest {
     public void updateClient() {
         Client createClient = Client.builder().build();
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(createClient)
-        .when()
-                .post(CLIENT_URI)
-        .then()
-                .statusCode(HttpStatus.SC_CREATED);
+        clientApi.createClient(createClient);
 
         Client updateClient = Client.builder().nome("Mickey Mouse").idade(30).risco(2).build();
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(updateClient)
-        .when()
-                .put(CLIENT_URI)
+        Response expectedResponse = clientApi.updateResponseClient(updateClient);
+
+        expectedResponse
         .then()
                 .statusCode(HttpStatus.SC_OK)
                 .body("1005.nome", equalTo(updateClient.getNome()))
@@ -78,21 +66,13 @@ public class ClientTest {
     public void deleteClient() {
         Client createClient = Client.builder().build();
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(createClient)
-        .when()
-                .post(CLIENT_URI)
-        .then()
-                .statusCode(HttpStatus.SC_CREATED);
+        clientApi.createClient(createClient);
 
-        given()
-                .pathParam("id", createClient.getId())
-                .contentType(ContentType.JSON)
-        .when()
-                .delete(GET_CLIENT_BY_ID)
+        Response expectedResponse = clientApi.deleteClient(createClient);
+
+        expectedResponse
         .then()
-                .statusCode(200)
+                .statusCode(HttpStatus.SC_OK)
                 .assertThat().body(not(contains("Minnie Mouse")));
     }
 
@@ -101,34 +81,15 @@ public class ClientTest {
     public void getAClient() {
         Client createClient = Client.builder().build();
 
-        given()
-                .contentType(ContentType.JSON)
-                .body(createClient)
-        .when()
-                .post(CLIENT_URI)
-        .then()
-                .statusCode(HttpStatus.SC_CREATED);
+        clientApi.createClient(createClient);
 
-        given()
-                .pathParam("id", createClient.getId())
-                .contentType(ContentType.JSON)
-        .when()
-                .get(GET_CLIENT_BY_ID)
-        .then()
-                .statusCode(200)
+        Response expectedResponse = clientApi.getClientById(createClient);
+
+        expectedResponse.then()
+                .statusCode(HttpStatus.SC_OK)
                 .body("id", equalTo(createClient.getId()))
                 .body("nome", equalTo(createClient.getNome()))
                 .body("idade", equalTo(createClient.getIdade()))
                 .body("risco", equalTo(createClient.getRisco()));
-    }
-
-    @BeforeEach
-    public void deleteAllClients() {
-        given()
-                .contentType(ContentType.JSON)
-        .when()
-                .delete(DROP_ALL_CLIENTS)
-        .then()
-                .statusCode(200);
     }
 }
