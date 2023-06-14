@@ -12,7 +12,6 @@ import java.util.HashMap;
 import static org.hamcrest.Matchers.*;
 
 public class ClientTest extends Config {
-    final static String GET_CLIENT_BY_ID = "/cliente/{id}";
     private final ClientApi clientApi;
 
     public ClientTest() {
